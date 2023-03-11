@@ -81,10 +81,15 @@ else()
 
 endif()
 
-add_executable(quickjs src/qjs.c ${CMAKE_CURRENT_BINARY_DIR}/qjscalc.c
+# add_executable(quickjs src/qjs.c ${CMAKE_CURRENT_BINARY_DIR}/qjscalc.c
+#                        ${CMAKE_CURRENT_BINARY_DIR}/repl.c)
+
+# target_link_libraries(quickjs PUBLIC qjs)
+
+ADD_LIBRARY(ffiqjs SHARED src/qjs.c src/ffiqjs.c ${CMAKE_CURRENT_BINARY_DIR}/qjscalc.c
                        ${CMAKE_CURRENT_BINARY_DIR}/repl.c)
 
-target_link_libraries(quickjs PUBLIC qjs)
+target_link_libraries(ffiqjs PUBLIC qjs)
 
 add_executable(run-test262 src/run-test262.c)
 target_link_libraries(run-test262 PUBLIC qjs)
