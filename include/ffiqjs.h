@@ -29,11 +29,13 @@
 
 #include "quickjs.h"
 
+typedef char *(*callback)(const char *fun_name,const char *json_data,int is_json);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int php_js_run(char *filename, int *callback(char *funname, ...), int trace_memory, size_t stack_size, size_t memory_limit);
+int quickjs_run(const char *filename, callback host_callback, int trace_memory, size_t stack_size, size_t memory_limit);
 
 #ifdef __cplusplus
 } /* extern "C" { */

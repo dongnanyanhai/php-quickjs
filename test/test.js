@@ -1,10 +1,4 @@
-// import * as std from "std";
+import * as std from "std";
 
-// var fname = "tmp_file.txt";
-// var content = "hello world";
-
-// f = std.open(fname, "w");
-// f.puts(content);
-// f.close();
-
-print('ddd');
+var re = bridge('var_dump','by test.js',false);
+// var re =  bridge('file_put_contents','["aaasdfasd.txt","asdfkhsdasdfasdf"]',true);

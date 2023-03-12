@@ -17,6 +17,10 @@
 #include "cutils.h"
 #include "quickjs-libc.h"
 
+typedef char *(*callback)(const char *fun_name,const char *json_data,int is_json);
+
+callback host_callback_cache;
+
 #ifdef CONFIG_BIGNUM
 extern const uint8_t qjsc_qjscalc[];
 extern const uint32_t qjsc_qjscalc_size;
@@ -252,8 +256,30 @@ static const JSMallocFunctions trace_mf = {
 #endif
 };
 
-int php_js_run(char *filename,int *callback(char *funname, ...), int trace_memory, size_t stack_size, size_t memory_limit)
+static JSValue js_host_callback(JSContext *ctx, JSValueConst this_val,
+                              int argc, JSValueConst *argv)
 {
+    int is_json;
+    const char *result,*fun_name,*json_data;
+
+    fun_name = JS_ToCString(ctx, argv[0]);
+
+    json_data = JS_ToCString(ctx, argv[1]);
+
+    is_json = JS_ToBool(ctx,argv[2]);
+    
+    result = host_callback_cache(fun_name,json_data,is_json);
+
+    JS_FreeCString(ctx, fun_name);
+
+    JS_FreeCString(ctx, json_data);
+
+    return JS_NewString(ctx, (char *)result);
+}
+
+int quickjs_run(const char *filename, callback host_callback, int trace_memory, size_t stack_size, size_t memory_limit)
+{
+    JSValue global_obj;
     JSRuntime *rt;
     JSContext *ctx;
     struct trace_malloc_data trace_data = { NULL };
@@ -315,7 +341,14 @@ int php_js_run(char *filename,int *callback(char *funname, ...), int trace_memor
             "globalThis.os = os;\n";
         eval_buf(ctx, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
     }
-    callback("aaa",123);
+
+    host_callback_cache = host_callback;
+
+    global_obj = JS_GetGlobalObject(ctx);
+
+    JS_SetPropertyStr(ctx, global_obj, "bridge", JS_NewCFunction(ctx, js_host_callback, "bridge", 1));
+
+    JS_FreeValue(ctx, global_obj);
 
     eval_file(ctx, filename, module);
     
