@@ -1,7 +1,7 @@
 <?php
 
 $host_callback = function ($fun_name, $json_data, $is_json) {
-    $str = "";
+    $str = "php function no exists";
     if (function_exists($fun_name)) {
         if ($is_json) {
             $str = (string) call_user_func($fun_name, ...json_decode($json_data, true));

@@ -274,6 +274,10 @@ static JSValue js_host_callback(JSContext *ctx, JSValueConst this_val,
 
     JS_FreeCString(ctx, json_data);
 
+    // if(!strcmp(result,"php function no exists")){
+    //     return JS_EXCEPTION;
+    // }
+
     return JS_NewString(ctx, (char *)result);
 }
 
