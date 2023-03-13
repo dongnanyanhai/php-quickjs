@@ -1,13 +1,23 @@
 <?php
 
+function test_arr_return()
+{
+    return ['a' => 1, 'b' => 2];
+}
+
 $host_callback = function ($fun_name, $json_data, $is_json) {
     $str = "php function no exists";
     if (function_exists($fun_name)) {
         if ($is_json) {
-            $str = (string) call_user_func($fun_name, ...json_decode($json_data, true));
+            $str = call_user_func($fun_name, ...json_decode($json_data, true));
         } else {
-            $str = (string) call_user_func($fun_name, $json_data);
+            $str = call_user_func($fun_name, $json_data);
         }
+
+        if (!is_string($str)) {
+            $str = json_encode($str);
+        }
+
         $len    = strlen($str);
         $result = FFI::new ('char[' . ($len + 1) . ']', 0);
         FFI::memcpy($result, $str, $len);
