@@ -20,12 +20,53 @@
 typedef char *(*callback)(const char *fun_name,const char *json_data,int is_json);
 
 callback host_callback_cache;
+const char *errstr;
 
 #ifdef CONFIG_BIGNUM
 extern const uint8_t qjsc_qjscalc[];
 extern const uint32_t qjsc_qjscalc_size;
 static int bignum_ext;
 #endif
+
+
+static void ffiqjs_dump_obj(JSContext *ctx, FILE *f, JSValueConst val)
+{
+    // const char *str;
+    
+    errstr = JS_ToCString(ctx, val);
+    if (errstr) {
+        // fprintf(f, "%s\n", str);
+        JS_FreeCString(ctx, errstr);
+    } else {
+        errstr = "[exception]\n";
+        // fprintf(f, "[exception]\n");
+    }
+}
+
+static void ffiqjs_std_dump_error1(JSContext *ctx, JSValueConst exception_val)
+{
+    JSValue val;
+    BOOL is_error;
+    
+    is_error = JS_IsError(ctx, exception_val);
+    ffiqjs_dump_obj(ctx, stderr, exception_val);
+    if (is_error) {
+        val = JS_GetPropertyStr(ctx, exception_val, "stack");
+        if (!JS_IsUndefined(val)) {
+            ffiqjs_dump_obj(ctx, stderr, val);
+        }
+        JS_FreeValue(ctx, val);
+    }
+}
+
+void ffiqjs_std_dump_error(JSContext *ctx)
+{
+    JSValue exception_val;
+    
+    exception_val = JS_GetException(ctx);
+    ffiqjs_std_dump_error1(ctx, exception_val);
+    JS_FreeValue(ctx, exception_val);
+}
 
 static int eval_buf(JSContext *ctx, const void *buf, int buf_len,
                     const char *filename, int eval_flags)
@@ -46,7 +87,7 @@ static int eval_buf(JSContext *ctx, const void *buf, int buf_len,
         val = JS_Eval(ctx, buf, buf_len, filename, eval_flags);
     }
     if (JS_IsException(val)) {
-        js_std_dump_error(ctx);
+        ffiqjs_std_dump_error(ctx);
         ret = -1;
     } else {
         ret = 0;
@@ -281,12 +322,13 @@ static JSValue js_host_callback(JSContext *ctx, JSValueConst this_val,
     return JS_NewString(ctx, (char *)result);
 }
 
-int quickjs_run(const char *filename, callback host_callback, int trace_memory, size_t stack_size, size_t memory_limit)
+char *quickjs_run(const char *filename, callback host_callback, int trace_memory, size_t stack_size, size_t memory_limit)
 {
     JSValue global_obj;
     JSRuntime *rt;
     JSContext *ctx;
     struct trace_malloc_data trace_data = { NULL };
+    int ret;
 
     int dump_memory = 0;
     int module = -1;
@@ -296,6 +338,8 @@ int quickjs_run(const char *filename, callback host_callback, int trace_memory, 
 #ifdef CONFIG_BIGNUM
     int load_jscalc = 0;
 #endif
+
+    errstr = "";
     
     if (load_jscalc)
         bignum_ext = 1;
@@ -354,16 +398,20 @@ int quickjs_run(const char *filename, callback host_callback, int trace_memory, 
 
     JS_FreeValue(ctx, global_obj);
 
-    eval_file(ctx, filename, module);
-    
-    if (dump_memory) {
-        JSMemoryUsage stats;
-        JS_ComputeMemoryUsage(rt, &stats);
-        JS_DumpMemoryUsage(stdout, &stats, rt);
-    }
+    ret = eval_file(ctx, filename, module);
+
+    // if (dump_memory) {
+    //     JSMemoryUsage stats;
+    //     JS_ComputeMemoryUsage(rt, &stats);
+    //     JS_DumpMemoryUsage(stdout, &stats, rt);
+    // }
     js_std_free_handlers(rt);
     JS_FreeContext(ctx);
     JS_FreeRuntime(rt);
 
-    return 1;
+    // if(ret == -1){
+    //     // 返回错误信息
+    // }
+
+    return (char *)errstr;
 }

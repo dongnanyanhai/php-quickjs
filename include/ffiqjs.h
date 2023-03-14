@@ -35,7 +35,7 @@ typedef char *(*callback)(const char *fun_name,const char *json_data,int is_json
 extern "C" {
 #endif
 
-int quickjs_run(const char *filename, callback host_callback, int trace_memory, size_t stack_size, size_t memory_limit);
+char *quickjs_run(const char *filename, callback host_callback, int trace_memory, size_t stack_size, size_t memory_limit);
 
 #ifdef __cplusplus
 } /* extern "C" { */

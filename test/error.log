@@ -1,0 +1,1 @@
+[14-Mar-2023 16:05:40 UTC] PHP Warning:  FFI::string() expects parameter 1 to be FFI\CData, null given in D:\DoNotOpen\projects\php-quickjs\test\ffiqjs.php on line 40
